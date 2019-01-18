@@ -1,4 +1,4 @@
-package wsproxy
+package main
 
 import (
 	"net"
@@ -14,7 +14,9 @@ import (
 var pool = make(map[string]proxyworker)
 var lock = sync.Mutex{}
 
-var MAX_PROXY_WORKERS int = 10
+var maxworkers int = 5
+
+func SetMaxWorkers(n int) { maxworkers = n }
 
 
 var upgrader = websocket.Upgrader {
@@ -30,7 +32,7 @@ func HandleWebsocket(w http.ResponseWriter, r* http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	if len(pool) >= MAX_PROXY_WORKERS {
+	if len(pool) >= maxworkers {
 		ws.WriteJSON(map[string]string{
 			"error" : "too many connections",
 		})
@@ -73,7 +75,7 @@ func HandleWebsocket(w http.ResponseWriter, r* http.Request) {
 		msgformat,
 		r.RemoteAddr,
 		proxy.key,
-		MAX_PROXY_WORKERS - len(pool) - 1,
+		maxworkers - len(pool) - 1,
 	)
 
 	lock.Lock()
